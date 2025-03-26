@@ -275,6 +275,11 @@ const OnSite = () => {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  // Handle viewing site details
+  const handleViewSite = (site: any) => {
+    setSelectedSite(site);
+  };
+
   return (
     <div className="page-transition space-y-6">
       <PageHeader 
