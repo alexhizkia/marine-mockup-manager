@@ -36,3 +36,9 @@ export function useIsMobile() {
     isTouchDevice: isIOS || isAndroid
   }
 }
+
+// Add a simpler version that just returns a boolean for components that only need to know if it's mobile
+export function useIsMobileBoolean(): boolean {
+  const { isMobile } = useIsMobile()
+  return isMobile
+}
