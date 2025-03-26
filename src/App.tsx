@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, createContext, useContext } from "react";
+import { useState, createContext, useContext, useEffect } from "react";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -56,6 +56,33 @@ const App = () => {
     role: "Survey Engineer",
     avatar: "/avatar.jpg"
   });
+  
+  // Add viewport meta tag for mobile devices
+  useEffect(() => {
+    // Add viewport meta tag for mobile devices if it doesn't exist
+    if (!document.querySelector('meta[name="viewport"]')) {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+    
+    // Add theme-color meta for mobile browsers
+    if (!document.querySelector('meta[name="theme-color"]')) {
+      const themeColorMeta = document.createElement('meta');
+      themeColorMeta.name = 'theme-color';
+      themeColorMeta.content = '#ffffff';
+      document.getElementsByTagName('head')[0].appendChild(themeColorMeta);
+    }
+    
+    // Add apple-mobile-web-app-capable meta
+    if (!document.querySelector('meta[name="apple-mobile-web-app-capable"]')) {
+      const appleMeta = document.createElement('meta');
+      appleMeta.name = 'apple-mobile-web-app-capable';
+      appleMeta.content = 'yes';
+      document.getElementsByTagName('head')[0].appendChild(appleMeta);
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

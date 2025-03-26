@@ -49,16 +49,16 @@ const AnimatedCard = ({
       onClick={onClick}
     >
       {(title || description) && (
-        <CardHeader className={cn("p-5", headerClassName)}>
-          {title && <CardTitle>{title}</CardTitle>}
-          {description && <CardDescription>{description}</CardDescription>}
+        <CardHeader className={cn("p-4 sm:p-5", headerClassName)}>
+          {title && <CardTitle className="text-base sm:text-lg md:text-xl">{title}</CardTitle>}
+          {description && <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>}
         </CardHeader>
       )}
-      <CardContent className={cn("p-5 pt-0", !title && !description && "pt-5", contentClassName)}>
+      <CardContent className={cn("p-4 sm:p-5 pt-0", !title && !description && "pt-4 sm:pt-5", contentClassName)}>
         {children}
       </CardContent>
       {footer && (
-        <CardFooter className={cn("p-5 pt-0 flex items-center", footerClassName)}>
+        <CardFooter className={cn("p-4 sm:p-5 pt-0 flex items-center", footerClassName)}>
           {footer}
         </CardFooter>
       )}

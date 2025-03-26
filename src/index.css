@@ -92,6 +92,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* iOS specific styles */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
 }
 
@@ -110,6 +113,23 @@
   
   .btn-hover {
     @apply transition-all duration-200 hover:scale-[1.02] active:scale-[0.98];
+  }
+  
+  /* Mobile-specific components */
+  .mobile-container {
+    @apply px-3 py-2 md:px-6 md:py-4;
+  }
+  
+  .mobile-safe-area {
+    @apply pt-safe pb-safe pl-safe pr-safe;
+  }
+  
+  .ios-momentum-scroll {
+    @apply overflow-y-auto overscroll-y-contain -webkit-overflow-scrolling-touch;
+  }
+  
+  .touch-action-none {
+    touch-action: none;
   }
 }
 
@@ -166,7 +186,56 @@
   animation: shimmer 1.5s infinite;
 }
 
+/* Fix for iOS Safari 100vh issue */
+.ios-viewport-fix {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: max(0px)) {
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0.5rem);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+  .pl-safe {
+    padding-left: max(env(safe-area-inset-left), 0.5rem);
+  }
+  .pr-safe {
+    padding-right: max(env(safe-area-inset-right), 0.5rem);
+  }
+}
+
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+
+/* Prevent elastic scroll on iOS */
+html, body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On desktop, revert the fixed positioning */
+@media (min-width: 1024px) {
+  html, body {
+    position: static;
+    overflow: auto;
+  }
+  
+  #root {
+    overflow: visible;
+  }
 }
