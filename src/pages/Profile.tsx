@@ -14,7 +14,7 @@ import {
   User,
   Download
 } from "lucide-react";
-import { useUser } from "@/App";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import AnimatedCard from "@/components/shared/AnimatedCard";
 
 const Profile = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   
   // User profile data
