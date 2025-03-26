@@ -14,6 +14,7 @@ interface AnimatedCardProps {
   animate?: "fadeIn" | "slideUp" | "none";
   delay?: string;
   hover?: boolean;
+  onClick?: () => void;
 }
 
 const AnimatedCard = ({
@@ -28,6 +29,7 @@ const AnimatedCard = ({
   animate = "fadeIn",
   delay = "0s",
   hover = true,
+  onClick,
 }: AnimatedCardProps) => {
   const animationClass = animate === "fadeIn" 
     ? "animate-fadeIn" 
@@ -44,6 +46,7 @@ const AnimatedCard = ({
         className
       )}
       style={{ animationDelay: delay }}
+      onClick={onClick}
     >
       {(title || description) && (
         <CardHeader className={cn("p-5", headerClassName)}>

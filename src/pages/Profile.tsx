@@ -8,9 +8,11 @@ import {
   Mail, 
   MapPin, 
   Phone, 
+  Plus,
   Save, 
   Shield, 
-  User 
+  User,
+  Download
 } from "lucide-react";
 import { useUser } from "@/App";
 import { Button } from "@/components/ui/button";
