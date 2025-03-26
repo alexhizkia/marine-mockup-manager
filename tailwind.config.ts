@@ -63,6 +63,12 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				pageo: {
+					blue: '#00B2FF',
+					darkBlue: '#0096D6',
+					dark: '#333333',
+					light: '#F5F5F5'
+				},
 				marine: {
 					50: '#f0f9ff',
 					100: '#e0f2fe',

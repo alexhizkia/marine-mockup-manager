@@ -9,7 +9,8 @@ import {
   Filter, 
   Plus, 
   Search, 
-  X 
+  X,
+  AlarmClock
 } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import AnimatedCard from "@/components/shared/AnimatedCard";
@@ -23,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import EarlyMorningAbsenceForm from "@/components/absentee/EarlyMorningAbsenceForm";
 
 // Sample data for absentees
 const absences = [
@@ -103,9 +106,11 @@ const leaveStats = [
 ];
 
 const Absentee = () => {
+  const { user, hasPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isAbsenceDialogOpen, setIsAbsenceDialogOpen] = useState(false);
+  const [isEarlyMorningDialogOpen, setIsEarlyMorningDialogOpen] = useState(false);
   const [newAbsence, setNewAbsence] = useState({
     name: "",
     role: "",
@@ -162,127 +167,149 @@ const Absentee = () => {
       <PageHeader 
         title="Absence Management" 
         subtitle="Track and manage team absences"
+        requiredRole={["admin", "manager"]}
       >
-        <Dialog open={isAbsenceDialogOpen} onOpenChange={setIsAbsenceDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="btn-hover">
-              <Plus className="mr-2 h-4 w-4" /> Record Absence
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <form onSubmit={handleSubmit}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Dialog open={isEarlyMorningDialogOpen} onOpenChange={setIsEarlyMorningDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="btn-hover">
+                <AlarmClock className="mr-2 h-4 w-4" /> Early Morning Absence
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
               <DialogHeader>
-                <DialogTitle>Record New Absence</DialogTitle>
+                <DialogTitle>Early Morning Absence Request</DialogTitle>
                 <DialogDescription>
-                  Submit absence details. All fields are required.
+                  Submit absence details for early morning (before 7 AM)
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Employee Name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={newAbsence.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Position/Role</Label>
-                    <Input
-                      id="role"
-                      name="role"
-                      value={newAbsence.role}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Absence Type</Label>
-                  <RadioGroup 
-                    value={newAbsence.type} 
-                    onValueChange={handleTypeChange}
-                    className="flex space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Sick Leave" id="sick" />
-                      <Label htmlFor="sick">Sick Leave</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Annual Leave" id="annual" />
-                      <Label htmlFor="annual">Annual Leave</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Personal Leave" id="personal" />
-                      <Label htmlFor="personal">Personal</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Business Travel" id="business" />
-                      <Label htmlFor="business">Business</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Reason</Label>
-                  <Input
-                    id="reason"
-                    name="reason"
-                    value={newAbsence.reason}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                      id="startDate"
-                      name="startDate"
-                      type="date"
-                      value={newAbsence.startDate}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input
-                      id="endDate"
-                      name="endDate"
-                      type="date"
-                      value={newAbsence.endDate}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="details">Additional Details</Label>
-                  <Textarea
-                    id="details"
-                    name="details"
-                    value={newAbsence.details}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAbsenceDialogOpen(false)}>
-                  Cancel
+              <EarlyMorningAbsenceForm onClose={() => setIsEarlyMorningDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+          
+          {hasPermission(['admin', 'manager']) && (
+            <Dialog open={isAbsenceDialogOpen} onOpenChange={setIsAbsenceDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="btn-hover" variant="outline">
+                  <Plus className="mr-2 h-4 w-4" /> Record Absence
                 </Button>
-                <Button type="submit">Submit Request</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[550px]">
+                <form onSubmit={handleSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Record New Absence</DialogTitle>
+                    <DialogDescription>
+                      Submit absence details. All fields are required.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Employee Name</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={newAbsence.name}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Position/Role</Label>
+                        <Input
+                          id="role"
+                          name="role"
+                          value={newAbsence.role}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Absence Type</Label>
+                      <RadioGroup 
+                        value={newAbsence.type} 
+                        onValueChange={handleTypeChange}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Sick Leave" id="sick" />
+                          <Label htmlFor="sick">Sick Leave</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Annual Leave" id="annual" />
+                          <Label htmlFor="annual">Annual Leave</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Personal Leave" id="personal" />
+                          <Label htmlFor="personal">Personal</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Business Travel" id="business" />
+                          <Label htmlFor="business">Business</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="reason">Reason</Label>
+                      <Input
+                        id="reason"
+                        name="reason"
+                        value={newAbsence.reason}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input
+                          id="startDate"
+                          name="startDate"
+                          type="date"
+                          value={newAbsence.startDate}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Input
+                          id="endDate"
+                          name="endDate"
+                          type="date"
+                          value={newAbsence.endDate}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="details">Additional Details</Label>
+                      <Textarea
+                        id="details"
+                        name="details"
+                        value={newAbsence.details}
+                        onChange={handleInputChange}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsAbsenceDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Submit Request</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -386,14 +413,14 @@ const Absentee = () => {
                                 : absence.status === "Pending"
                                   ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
                                   : absence.status === "Completed"
-                                    ? "bg-marine-100 text-marine-800 dark:bg-marine-900/30 dark:text-marine-300"
+                                    ? "bg-pageo-blue/20 text-pageo-blue dark:bg-pageo-blue/30 dark:text-pageo-blue"
                                     : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                             }`}>
                               {absence.status}
                             </span>
                           </td>
                           <td className="px-3 py-4 text-sm">
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-marine-600 dark:text-marine-300">
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-pageo-blue dark:text-pageo-blue">
                               Details
                             </Button>
                           </td>
@@ -412,15 +439,17 @@ const Absentee = () => {
             </div>
           </AnimatedCard>
           
-          <div className="mt-6 flex items-center justify-between">
-            <Button variant="outline" className="text-sm flex items-center space-x-1">
-              <Download className="h-4 w-4 mr-1" />
-              Export Report
-            </Button>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredAbsences.length} of {absences.length} absences
+          {hasPermission(['admin', 'manager']) && (
+            <div className="mt-6 flex items-center justify-between">
+              <Button variant="outline" className="text-sm flex items-center space-x-1">
+                <Download className="h-4 w-4 mr-1" />
+                Export Report
+              </Button>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Showing {filteredAbsences.length} of {absences.length} absences
+              </div>
             </div>
-          </div>
+          )}
         </TabsContent>
         
         <TabsContent value="pending">
@@ -467,14 +496,22 @@ const Absentee = () => {
                           {sameDayAbsence ? startDate : `${startDate} - ${endDate}`}
                         </td>
                         <td className="px-3 py-4 text-sm flex space-x-2">
-                          <Button size="sm" className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-8 px-3 border-red-200 text-red-600 hover:bg-red-50">
-                            <X className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
+                          {hasPermission(['admin', 'manager']) ? (
+                            <>
+                              <Button size="sm" className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white">
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-8 px-3 border-red-200 text-red-600 hover:bg-red-50">
+                                <X className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-pageo-blue dark:text-pageo-blue">
+                              Details
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );

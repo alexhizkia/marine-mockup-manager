@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, createContext, useContext, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -15,48 +16,34 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
 
 // Layout
 import AppLayout from "./components/layout/AppLayout";
 
-// Context types
-type UserContextType = {
-  user: {
-    id: string;
-    name: string;
-    role: string;
-    avatar: string;
-  } | null;
-  setUser: React.Dispatch<React.SetStateAction<{
-    id: string;
-    name: string;
-    role: string;
-    avatar: string;
-  } | null>>;
-};
-
-// Create contexts
-export const UserContext = createContext<UserContextType | undefined>(undefined);
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error("useUser must be used within a UserProvider");
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="h-16 w-16 animate-spin rounded-full border-t-4 border-pageo-blue"></div>
+        <p className="text-lg font-medium">Loading...</p>
+      </div>
+    </div>;
   }
-  return context;
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  // Mock logged in user - in a real app this would come from authentication
-  const [user, setUser] = useState({
-    id: "1",
-    name: "Alex Morgan",
-    role: "Survey Engineer",
-    avatar: "/avatar.jpg"
-  });
-  
+const AppContent = () => {
   // Add viewport meta tag for mobile devices
   useEffect(() => {
     // Add viewport meta tag for mobile devices if it doesn't exist
@@ -71,7 +58,7 @@ const App = () => {
     if (!document.querySelector('meta[name="theme-color"]')) {
       const themeColorMeta = document.createElement('meta');
       themeColorMeta.name = 'theme-color';
-      themeColorMeta.content = '#ffffff';
+      themeColorMeta.content = '#00B2FF'; // Pageo blue
       document.getElementsByTagName('head')[0].appendChild(themeColorMeta);
     }
     
@@ -85,27 +72,41 @@ const App = () => {
   }, []);
 
   return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="absentee" element={<Absentee />} />
+          <Route path="onsite" element={<OnSite />} />
+          <Route path="office" element={<Office />} />
+          <Route path="projects" element={<Projects />} />
+          <Route path="projects/:id" element={<ProjectDetail />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
-      <UserContext.Provider value={{ user, setUser }}>
+      <AuthProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<AppLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="absentee" element={<Absentee />} />
-                <Route path="onsite" element={<OnSite />} />
-                <Route path="office" element={<Office />} />
-                <Route path="projects" element={<Projects />} />
-                <Route path="projects/:id" element={<ProjectDetail />} />
-                <Route path="profile" element={<Profile />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <AppContent />
         </TooltipProvider>
-      </UserContext.Provider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
