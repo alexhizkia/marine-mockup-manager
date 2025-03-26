@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   AlertTriangle, 
@@ -8,9 +7,11 @@ import {
   MoreVertical, 
   Plus, 
   Ship, 
-  User
+  User,
+  Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import PageHeader from "@/components/shared/PageHeader";
 import AnimatedCard from "@/components/shared/AnimatedCard";
 import { Button } from "@/components/ui/button";
@@ -145,10 +146,13 @@ const vessels = [
 
 const OnSite = () => {
   const navigate = useNavigate();
+  const { user, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState("sites");
   const [isSiteDialogOpen, setIsSiteDialogOpen] = useState(false);
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
+  const [isCheckInDialogOpen, setIsCheckInDialogOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<any>(null);
+  const [selectedPersonnel, setSelectedPersonnel] = useState<any>(null);
   
   // New site form state
   const [newSite, setNewSite] = useState({
@@ -159,6 +163,14 @@ const OnSite = () => {
     startDate: "",
     endDate: "",
     project: ""
+  });
+
+  // Check-in form state
+  const [checkInData, setCheckInData] = useState({
+    site: "",
+    time: "",
+    notes: "",
+    geolocation: ""
   });
 
   // Handle site form input change
@@ -183,9 +195,78 @@ const OnSite = () => {
     });
   };
 
-  // View site details
-  const handleViewSite = (site: any) => {
-    setSelectedSite(site);
+  // Handle check-in form input change
+  const handleCheckInInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCheckInData({ ...checkInData, [name]: value });
+  };
+
+  // Handle check-in form submission
+  const handleCheckInSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Get current time if not provided
+    const time = checkInData.time || new Date().toLocaleTimeString();
+    
+    // Try to get geolocation if not provided
+    if (!checkInData.geolocation) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const geolocation = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          
+          completeCheckIn({
+            ...checkInData,
+            time,
+            geolocation
+          });
+        }, () => {
+          // If geolocation failed
+          completeCheckIn({
+            ...checkInData,
+            time,
+            geolocation: "Not available"
+          });
+        });
+      } else {
+        completeCheckIn({
+          ...checkInData,
+          time,
+          geolocation: "Not available"
+        });
+      }
+    } else {
+      completeCheckIn({
+        ...checkInData,
+        time
+      });
+    }
+  };
+  
+  // Complete check-in process
+  const completeCheckIn = (data: typeof checkInData) => {
+    const siteName = sites.find(s => s.id === data.site)?.name || "Unknown site";
+    toast.success(`Successfully checked in at ${siteName} at ${data.time}`);
+    setIsCheckInDialogOpen(false);
+    setCheckInData({
+      site: "",
+      time: "",
+      notes: "",
+      geolocation: ""
+    });
+  };
+
+  // Open check-in dialog for a specific personnel
+  const handleOpenCheckInForPersonnel = (person: any) => {
+    setSelectedPersonnel(person);
+    // Find the site ID matching the person's site name
+    const siteId = sites.find(s => s.name === person.site)?.id || "";
+    setCheckInData({
+      ...checkInData,
+      site: siteId
+    });
+    setIsCheckInDialogOpen(true);
   };
 
   // Format date from ISO to readable format
@@ -203,7 +284,7 @@ const OnSite = () => {
         <div className="flex space-x-2">
           <Dialog open={isSiteDialogOpen} onOpenChange={setIsSiteDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="btn-hover">
+              <Button className="btn-hover" disabled={!hasPermission(['admin', 'manager'])}>
                 <Plus className="mr-2 h-4 w-4" /> New Site
               </Button>
             </DialogTrigger>
@@ -317,7 +398,7 @@ const OnSite = () => {
           
           <Dialog open={isPersonnelDialogOpen} onOpenChange={setIsPersonnelDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="btn-hover">
+              <Button variant="outline" className="btn-hover" disabled={!hasPermission(['admin', 'manager'])}>
                 <User className="mr-2 h-4 w-4" /> Deploy Personnel
               </Button>
             </DialogTrigger>
@@ -385,6 +466,86 @@ const OnSite = () => {
                   Deploy
                 </Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={isCheckInDialogOpen} onOpenChange={setIsCheckInDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="btn-hover">
+                <Clock className="mr-2 h-4 w-4" /> Check In
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <form onSubmit={handleCheckInSubmit}>
+                <DialogHeader>
+                  <DialogTitle>On-Site Check In</DialogTitle>
+                  <DialogDescription>
+                    Record your arrival at a survey site.
+                    {selectedPersonnel && ` Checking in for ${selectedPersonnel.name}.`}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="site">Survey Site</Label>
+                    <Select 
+                      value={checkInData.site} 
+                      onValueChange={(value) => setCheckInData({ ...checkInData, site: value })}
+                      required
+                    >
+                      <SelectTrigger id="site">
+                        <SelectValue placeholder="Select site" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites.filter(site => site.status === "Active").map(site => (
+                          <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Check-in Time (defaults to current time)</Label>
+                    <Input
+                      id="time"
+                      name="time"
+                      type="time"
+                      value={checkInData.time}
+                      onChange={handleCheckInInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="geolocation">Location Coordinates (optional)</Label>
+                    <Input
+                      id="geolocation"
+                      name="geolocation"
+                      placeholder="Will attempt to determine automatically"
+                      value={checkInData.geolocation}
+                      onChange={handleCheckInInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Input
+                      id="notes"
+                      name="notes"
+                      placeholder="Any additional information about your arrival"
+                      value={checkInData.notes}
+                      onChange={handleCheckInInputChange}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsCheckInDialogOpen(false);
+                    setSelectedPersonnel(null);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Check In</Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -532,9 +693,24 @@ const OnSite = () => {
                         {person.daysOnSite}
                       </td>
                       <td className="px-3 py-4 text-sm">
-                        <Button variant="ghost" size="sm" className="h-8 px-2 text-marine-600 dark:text-marine-300">
-                          Contact
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 text-marine-600 dark:text-marine-300"
+                            onClick={() => handleOpenCheckInForPersonnel(person)}
+                          >
+                            <Clock className="h-3.5 w-3.5 mr-1" />
+                            Check In
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 text-marine-600 dark:text-marine-300"
+                          >
+                            Contact
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
